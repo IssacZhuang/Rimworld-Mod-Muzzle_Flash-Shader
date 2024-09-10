@@ -1,9 +1,9 @@
 ManifestFileVersion: 0
-CRC: 995351146
+CRC: 1264029063
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 82bb50b97c8603b1ed38863cd30cbf80
+    Hash: 6f7483079a013e30b13d9f275ab6c400
   TypeTreeHash:
     serializedVersion: 2
     Hash: 55d48f4ad9c3b13330b9eb5ee5686477
@@ -11,6 +11,7 @@ HashAppended: 0
 ClassTypes:
 - Class: 48
   Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
 Assets:
 - Assets/Shaders/AnimatedAdditiveInstanced.shader
 Dependencies: []

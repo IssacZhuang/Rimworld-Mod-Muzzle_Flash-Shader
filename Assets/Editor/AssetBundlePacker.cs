@@ -48,19 +48,19 @@ public class AssetBundlePacker : MonoBehaviour
             File.Delete(file);
         }
 
-        PackBundleForPlatform(outputPath, BuildTarget.StandaloneWindows);
-        PackBundleForPlatform(outputPath, BuildTarget.StandaloneLinux64);
-        PackBundleForPlatform(outputPath, BuildTarget.StandaloneOSX);
+        BuildBundleForPlatform(outputPath, BuildTarget.StandaloneWindows);
+        BuildBundleForPlatform(outputPath, BuildTarget.StandaloneLinux64);
+        BuildBundleForPlatform(outputPath, BuildTarget.StandaloneOSX);
     }
 
-    private static void PackBundleForPlatform(string path, BuildTarget target)
+    private static void BuildBundleForPlatform(string path, BuildTarget target)
     {
         AssetBundleBuild build = new AssetBundleBuild();
         build.assetBundleName = "shaders" + GetPlatformPostFix(target);
         build.assetNames = AssetDatabase.GetAssetPathsFromAssetBundle("shaders");
         AssetBundleBuild[] builds = new AssetBundleBuild[]{build};
 
-        BuildPipeline.BuildAssetBundles(path, builds, BuildAssetBundleOptions.None, target);
+        BuildPipeline.BuildAssetBundles(path, builds, BuildAssetBundleOptions.ForceRebuildAssetBundle, target);
     }
 
     private static string GetPlatformPostFix(BuildTarget target)
