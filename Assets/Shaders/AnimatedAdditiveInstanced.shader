@@ -1,8 +1,8 @@
-﻿Shader "Unlit/AnimatedAdditiveInstanced"
+﻿﻿Shader "Unlit/AnimatedInstanced"
 {
     Properties
     {
-        [NoScaleOffset]_MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Texture", 2D) = "white" {}
         _Color ("Main Color", Color) = (1,1,1,1)
         _LightIntensity ("Light Intensity", float) = 1
 
@@ -12,16 +12,15 @@
     SubShader
     {
         Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "PreviewType" = "Plane"}
-        ColorMask RGB
-        Lighting Off ZWrite Off
+        ZWrite Off
         
         Pass
         {
-            Blend SrcAlpha One
+            Blend SrcAlpha One, SrcAlpha One
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma instancing_options assumeuniformscaling
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
@@ -35,9 +34,7 @@
 
             struct v2f
             {
-                float2 uv1 : TEXCOORD0;
-                float2 uv2 : TEXCOORD1;
-                float t: TEXCOORD2;
+                float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
                 UNITY_VERTEX_INPUT_INSTANCE_ID  
             };
@@ -50,40 +47,27 @@
 
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(fixed4, _Color)
-                UNITY_DEFINE_INSTANCED_PROP(float, _Frame)
-            UNITY_INSTANCING_BUFFER_END(Props)          
+                UNITY_DEFINE_INSTANCED_PROP(fixed, _Frame)
+            UNITY_INSTANCING_BUFFER_END(Props)
 
-
-            float2 GetUV(float2 uv, float dx, float dy , int stage)
-            {
-                return float2(
-                    (uv.x * dx) + fmod(stage, _Splits.x) * dx,
-                    1.0 - ((uv.y * dy) + (stage / _Splits.y) * dy)
-                );
+            fixed4 shot (sampler2D tex, float2 uv, float dx, float dy, int Stage) {
+                return tex2D(tex, float2(
+                    (uv.x * dx) + fmod(Stage, _Splits.x) * dx,
+                    1.0 - ((uv.y * dy) + (Stage / _Splits.y) * dy)
+                ));
             }
+
+            
 
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
 
                 UNITY_SETUP_INSTANCE_ID(v); 
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
 
-                int Stages = _Splits.x * _Splits.y;
-                float Stage = fmod(UNITY_ACCESS_INSTANCED_PROP(Props,_Frame), Stages);
-                
-                int current = floor(Stage);
-                int next = floor(fmod(Stage + 1, Stages));
-
-                float dx = 1.0 / _Splits.x; 
-                float dy = 1.0 / _Splits.y;
-
-                o.uv1 = GetUV(v.uv, dx, dy, current);
-
-                o.uv2 = GetUV(v.uv, dx, dy, next);
-
-                o.t = Stage - current;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 
                 return o;
             }
@@ -91,10 +75,15 @@
             fixed4 frag (v2f i) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(i);
+
+                int Stages = _Splits.x * _Splits.y;
+                float Stage = fmod(UNITY_ACCESS_INSTANCED_PROP(Props,_Frame), Stages);
+                int current = floor(Stage);
+                half dx = 1.0 / _Splits.x;
+                half dy = 1.0 / _Splits.y;
  
-                fixed4 finalColor = lerp(tex2D(_MainTex, i.uv1), tex2D(_MainTex, i.uv2), i.t) * _Color * _LightIntensity;
-                finalColor.a = saturate(finalColor.a);
-                return finalColor;
+                int next = floor(fmod(Stage + 1, Stages));
+                return lerp(shot(_MainTex, i.uv, dx, dy, current), shot(_MainTex, i.uv, dx, dy, next), Stage - current) * UNITY_ACCESS_INSTANCED_PROP(Props,_Color) * _LightIntensity;
             }
             ENDCG
         }
