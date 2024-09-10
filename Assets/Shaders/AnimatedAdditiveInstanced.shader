@@ -1,4 +1,4 @@
-﻿﻿Shader "Unlit/AnimatedInstanced"
+﻿Shader "Unlit/AnimatedAdditiveInstanced"
 {
     Properties
     {
@@ -12,11 +12,12 @@
     SubShader
     {
         Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "PreviewType" = "Plane"}
-        ZWrite Off
+        ColorMask RGB
+        Lighting Off ZWrite Off
         
         Pass
         {
-            Blend SrcAlpha One, SrcAlpha One
+            Blend SrcAlpha One
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -83,7 +84,9 @@
                 half dy = 1.0 / _Splits.y;
  
                 int next = floor(fmod(Stage + 1, Stages));
-                return lerp(shot(_MainTex, i.uv, dx, dy, current), shot(_MainTex, i.uv, dx, dy, next), Stage - current) * UNITY_ACCESS_INSTANCED_PROP(Props,_Color) * _LightIntensity;
+                fixed4 finalColor = lerp(shot(_MainTex, i.uv, dx, dy, current), shot(_MainTex, i.uv, dx, dy, next), Stage - current) * UNITY_ACCESS_INSTANCED_PROP(Props,_Color) * _LightIntensity;
+                finalColor.a = saturate(finalColor.a);
+                return finalColor;
             }
             ENDCG
         }
